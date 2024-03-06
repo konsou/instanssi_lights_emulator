@@ -33,6 +33,12 @@ def parse_data(data: bytes) -> None:
 
 
 def main():
+    # Update the display to show the background image from the beginning
+    update_display(screen=screen,
+                   lights_state=lights_state,
+                   position_map=position_map,
+                   background_image=background_image)
+
     # Set up your socket here
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((settings.UDP_IP, settings.UDP_PORT))

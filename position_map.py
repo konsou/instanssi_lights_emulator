@@ -1,15 +1,14 @@
-# position_map.py
 import json
-from typing import Dict, Tuple
+from typing import List, Tuple
 
 
-def load_position_map(filename: str) -> Dict[int, Tuple[int, int]]:
+def load_position_map(filename: str) -> List[Tuple[int, int, str]]:
     """Load the position map from a JSON file."""
     try:
         with open(filename, 'r') as f:
             position_map_data = json.load(f)
-        # Convert keys from string to integer, and values to tuple
-        position_map = {int(k): tuple(v) for k, v in position_map_data.items()}
+        # Convert each list to a tuple
+        position_map = [tuple(item) for item in position_map_data]
         return position_map
     except FileNotFoundError:
         print(f"Position map file not found: {filename}")
