@@ -1,42 +1,24 @@
-import socket
 import pygame
 import sys
-from typing import Tuple
-
 import select
-
-# Configuration
-UDP_IP = "127.0.0.1"
-UDP_PORT = 9909
-SCREEN_WIDTH, SCREEN_HEIGHT = 1024, 768
-LIGHT_RADIUS = 25
-LIGHTS_PER_ROW = 7  # To fit 28 lights in a grid, 7x4
-BACKGROUND_COLOR = (0, 0, 0)
+import socket
+from draw import update_display
+import settings
+from position_map import load_position_map
 
 # Initialize pygame
 pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT))
 pygame.display.set_caption("Instanssi Lights Emulator")
+
+# Load the background image
+background_image = pygame.image.load(settings.BACKGROUND_IMAGE_PATH)
+
+# Load the position map
+position_map = load_position_map(settings.POSITION_MAP_FILE)
 
 # Dictionary to store the state of each light
 lights_state = {index: (0, 0, 0) for index in range(28)}
-
-
-def draw_light(index: int, color: Tuple[int, int, int]) -> None:
-    """Draws a light on the screen based on its index."""
-    col = index % LIGHTS_PER_ROW
-    row = index // LIGHTS_PER_ROW
-    x = col * (2 * LIGHT_RADIUS + 10) + LIGHT_RADIUS + 10
-    y = row * (2 * LIGHT_RADIUS + 10) + LIGHT_RADIUS + 10
-    pygame.draw.circle(screen, color, (x, y), LIGHT_RADIUS)
-
-
-def update_display() -> None:
-    """Updates the display with the current state of all lights."""
-    screen.fill(BACKGROUND_COLOR)
-    for index, color in lights_state.items():
-        draw_light(index, color)
-    pygame.display.flip()
 
 
 def parse_data(data: bytes) -> None:
@@ -50,23 +32,10 @@ def parse_data(data: bytes) -> None:
         lights_state[light_index] = (r, g, b)
 
 
-def udp_listener():
-    """Listens for UDP packets and updates the lights' state."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((UDP_IP, UDP_PORT))
-    print(f"Listening for data on UDP port {UDP_PORT}...")
-
-    while True:
-        data, _ = sock.recvfrom(1024)  # Buffer size is 1024 bytes
-        print(f"Data received: {data}")
-        parse_data(data)
-        update_display()
-
-
 def main():
     # Set up your socket here
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((UDP_IP, UDP_PORT))
+    sock.bind((settings.UDP_IP, settings.UDP_PORT))
     sock.setblocking(False)  # Make the socket non-blocking
 
     try:
@@ -78,7 +47,10 @@ def main():
             if sock in readable:
                 data, _ = sock.recvfrom(1024)
                 parse_data(data)
-                update_display()
+                update_display(screen=screen,
+                               lights_state=lights_state,
+                               position_map=position_map,
+                               background_image=background_image)
 
             # Process pygame events
             for event in pygame.event.get():
